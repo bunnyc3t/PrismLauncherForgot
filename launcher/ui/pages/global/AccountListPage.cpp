@@ -143,7 +143,7 @@ void AccountListPage::on_actionAddOffline_triggered()
 {
 
 
-    ChooseOfflineNameDialog dialog(tr("Please enter your desired username to add your offline account."), this);
+    ChooseOfflineNameDialog dialog(tr("Please enter your desired username to add your offline account you BROKIE"), this);
     if (dialog.exec() != QDialog::Accepted) {
         return;
     }
