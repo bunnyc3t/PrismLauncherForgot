@@ -69,6 +69,7 @@ void AuthFlow::nextStep()
     }
     m_currentStep = m_steps.front();
     qDebug() << "AuthFlow:" << m_currentStep->describe();
+    setStatus(m_currentStep->describe());
     m_steps.pop_front();
     connect(m_currentStep.get(), &AuthStep::finished, this, &AuthFlow::stepFinished);
 
@@ -92,7 +93,9 @@ bool AuthFlow::changeState(AccountTaskState newState, QString reason)
             return true;
         }
         case AccountTaskState::STATE_WORKING: {
-            setStatus(m_currentStep ? m_currentStep->describe() : tr("Working..."));
+            if (!m_currentStep) {
+                setStatus(tr("Preparing to log in..."));
+            }
             m_data->accountState = AccountState::Working;
             return true;
         }
@@ -148,8 +151,8 @@ bool AuthFlow::changeState(AccountTaskState newState, QString reason)
 }
 bool AuthFlow::abort()
 {
-    emitAborted();
     if (m_currentStep)
         m_currentStep->abort();
+    emitAborted();
     return true;
 }

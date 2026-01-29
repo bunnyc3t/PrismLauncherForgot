@@ -29,14 +29,14 @@
 
 #include <optional>
 
-static std::list<Version> mcVersions(BaseInstance* inst)
+static std::vector<Version> mcVersions(BaseInstance* inst)
 {
     return { static_cast<MinecraftInstance*>(inst)->getPackProfile()->getComponent("net.minecraft")->getVersion() };
 }
 
 ResourceUpdateDialog::ResourceUpdateDialog(QWidget* parent,
                                            BaseInstance* instance,
-                                           const std::shared_ptr<ResourceFolderModel> resourceModel,
+                                           ResourceFolderModel* resourceModel,
                                            QList<Resource*>& searchFor,
                                            bool includeDeps,
                                            QList<ModPlatform::ModLoaderType> loadersList)
@@ -188,7 +188,7 @@ void ResourceUpdateDialog::checkCandidates()
     }
 
     if (m_includeDeps && !APPLICATION->settings()->get("ModDependenciesDisabled").toBool()) {  // dependencies
-        auto* mod_model = dynamic_cast<ModFolderModel*>(m_resourceModel.get());
+        auto* mod_model = dynamic_cast<ModFolderModel*>(m_resourceModel);
 
         if (mod_model != nullptr) {
             auto depTask = makeShared<GetModDependenciesTask>(m_instance, mod_model, selectedVers);

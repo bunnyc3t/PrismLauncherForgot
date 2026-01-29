@@ -40,6 +40,7 @@
 #include <QFileSystemWatcher>
 #include <QMap>
 #include <QMimeData>
+#include <QPixmap>
 #include <QSet>
 #include <QUrl>
 #include "icons/IconUtils.h"
@@ -146,8 +147,7 @@ void IconList::directoryChanged(const QString& path)
 {
     QDir newDir(path);
     if (m_dir.absolutePath() != newDir.absolutePath()) {
-        if (!path.startsWith(m_dir.absolutePath()))
-            m_dir.setPath(path);
+        m_dir.setPath(path);
         m_dir.refresh();
         if (m_isWatching)
             stopWatching();
@@ -217,7 +217,13 @@ void IconList::fileChanged(const QString& path)
     int idx = getIconIndex(key);
     if (idx == -1)
         return;
-    QIcon icon(path);
+    QIcon icon;
+    // special handling for jpg and jpeg to go through pixmap to keep the size constant
+    if (path.endsWith(".jpg") || path.endsWith(".jpeg")) {
+        icon.addPixmap(QPixmap(path));
+    } else {
+        icon.addFile(path);
+    }
     if (icon.availableSizes().empty())
         return;
 
@@ -395,7 +401,14 @@ bool IconList::addThemeIcon(const QString& key)
 bool IconList::addIcon(const QString& key, const QString& name, const QString& path, const IconType type)
 {
     // replace the icon even? is the input valid?
-    QIcon icon(path);
+    QIcon icon;
+    // special handling for jpg and jpeg to go through pixmap to keep the size constant
+    if (path.endsWith(".jpg") || path.endsWith(".jpeg")) {
+        icon.addPixmap(QPixmap(path));
+    } else {
+        icon.addFile(path);
+    }
+
     if (icon.isNull())
         return false;
     auto iter = m_nameIndex.find(key);

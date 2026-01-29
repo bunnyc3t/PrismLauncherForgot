@@ -38,9 +38,12 @@ ResourceFolderModel::ResourceFolderModel(const QDir& dir, BaseInstance* instance
     m_dir.setSorting(QDir::Name | QDir::IgnoreCase | QDir::LocaleAware);
 
     connect(&m_watcher, &QFileSystemWatcher::directoryChanged, this, &ResourceFolderModel::directoryChanged);
-    connect(&m_helper_thread_task, &ConcurrentTask::finished, this, [this] { m_helper_thread_task.clear(); });
+    connect(&m_resourceResolver, &ConcurrentTask::finished, this, [this] {
+        m_resourceResolver.clear();
+        m_resourceResolverRunning = false;
+    });
     if (APPLICATION_DYN) {  // in tests the application macro doesn't work
-        m_helper_thread_task.setMaxConcurrent(APPLICATION->settings()->get("NumberOfConcurrentTasks").toInt());
+        m_resourceResolver.setMaxConcurrent(APPLICATION->settings()->get("NumberOfConcurrentTasks").toInt());
     }
 }
 
@@ -175,7 +178,7 @@ void ResourceFolderModel::installResourceWithFlameMetadata(QString path, ModPlat
         };
 
         auto response = std::make_shared<QByteArray>();
-        auto job = FlameAPI().getProject(vers.addonId.toString(), response);
+        auto job = FlameAPI().getProject(vers.addonId.toString(), response.get());
         connect(job.get(), &Task::failed, this, install);
         connect(job.get(), &Task::aborted, this, install);
         connect(job.get(), &Task::succeeded, [response, this, &vers, install, &pack] {
@@ -335,7 +338,7 @@ bool ResourceFolderModel::update()
         },
         Qt::ConnectionType::QueuedConnection);
 
-    Task::Ptr preUpdate{createPreUpdateTask()};
+    Task::Ptr preUpdate{ createPreUpdateTask() };
 
     if (preUpdate != nullptr) {
         auto task = new SequentialTask("ResourceFolderModel::update");
@@ -382,10 +385,11 @@ void ResourceFolderModel::resolveResource(Resource::Ptr res)
         },
         Qt::ConnectionType::QueuedConnection);
 
-    m_helper_thread_task.addTask(task);
+    m_resourceResolver.addTask(task);
 
-    if (!m_helper_thread_task.isRunning()) {
-        QThreadPool::globalInstance()->start(&m_helper_thread_task);
+    if (!m_resourceResolverRunning) {
+        QThreadPool::globalInstance()->start(&m_resourceResolver);
+        m_resourceResolverRunning = true;
     }
 }
 

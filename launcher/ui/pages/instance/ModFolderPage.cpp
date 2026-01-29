@@ -66,7 +66,7 @@
 #include "tasks/Task.h"
 #include "ui/dialogs/ProgressDialog.h"
 
-ModFolderPage::ModFolderPage(BaseInstance* inst, std::shared_ptr<ModFolderModel> model, QWidget* parent)
+ModFolderPage::ModFolderPage(BaseInstance* inst, ModFolderModel* model, QWidget* parent)
     : ExternalResourcesPage(inst, model, parent), m_model(model)
 {
     ui->actionDownloadItem->setText(tr("Download Mods"));
@@ -341,8 +341,7 @@ void ModFolderPage::exportModMetadata()
     dlg.exec();
 }
 
-CoreModFolderPage::CoreModFolderPage(BaseInstance* inst, std::shared_ptr<ModFolderModel> mods, QWidget* parent)
-    : ModFolderPage(inst, mods, parent)
+CoreModFolderPage::CoreModFolderPage(BaseInstance* inst, ModFolderModel* mods, QWidget* parent) : ModFolderPage(inst, mods, parent)
 {
     auto mcInst = dynamic_cast<MinecraftInstance*>(m_instance);
     if (mcInst) {
@@ -381,9 +380,7 @@ bool CoreModFolderPage::shouldDisplay() const
     return false;
 }
 
-NilModFolderPage::NilModFolderPage(BaseInstance* inst, std::shared_ptr<ModFolderModel> mods, QWidget* parent)
-    : ModFolderPage(inst, mods, parent)
-{}
+NilModFolderPage::NilModFolderPage(BaseInstance* inst, ModFolderModel* mods, QWidget* parent) : ModFolderPage(inst, mods, parent) {}
 
 bool NilModFolderPage::shouldDisplay() const
 {
@@ -393,9 +390,10 @@ bool NilModFolderPage::shouldDisplay() const
 // Helper function so this doesn't need to be duplicated 3 times
 inline bool ModFolderPage::handleNoModLoader()
 {
-    int resp = QMessageBox::question(this, this->tr("Missing Mod Loader"),
-                                     this->tr("You need to install a compatible mod loader before installing mods. Would you like to do so?"),
-                                     QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+    int resp =
+        QMessageBox::question(this, this->tr("Missing Mod Loader"),
+                              this->tr("You need to install a compatible mod loader before installing mods. Would you like to do so?"),
+                              QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
     switch (resp) {
         case QMessageBox::Yes: {
             // Should be safe
@@ -403,8 +401,8 @@ inline bool ModFolderPage::handleNoModLoader()
             InstallLoaderDialog dialog(profile, QString(), this);
             bool ret = dialog.exec();
             this->m_container->refreshContainer();
-            
-            // returning negation of dialog.exec which'll be true if the install loader dialog got canceled/closed 
+
+            // returning negation of dialog.exec which'll be true if the install loader dialog got canceled/closed
             // and false if the user went through and installed a loader
             return !ret;
         }

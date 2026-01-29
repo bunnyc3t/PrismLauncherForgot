@@ -16,10 +16,10 @@
 static ModrinthAPI api;
 
 ModrinthCheckUpdate::ModrinthCheckUpdate(QList<Resource*>& resources,
-                                         std::list<Version>& mcVersions,
+                                         std::vector<Version>& mcVersions,
                                          QList<ModPlatform::ModLoaderType> loadersList,
-                                         std::shared_ptr<ResourceFolderModel> resourceModel)
-    : CheckUpdateTask(resources, mcVersions, std::move(loadersList), std::move(resourceModel))
+                                         ResourceFolderModel* resourceModel)
+    : CheckUpdateTask(resources, mcVersions, std::move(loadersList), resourceModel)
     , m_hashType(ModPlatform::ProviderCapabilities::hashType(ModPlatform::ResourceProvider::MODRINTH).first())
 {
     if (!m_loadersList.isEmpty()) {  // this is for mods so append all the other posible loaders to the initial list
@@ -90,16 +90,22 @@ void ModrinthCheckUpdate::getUpdateModsForLoader(std::optional<ModPlatform::ModL
     QStringList hashes;
     if (forceModLoaderCheck && loader.has_value()) {
         for (auto hash : m_mappings.keys()) {
-            if (m_mappings[hash]->metadata()->loaders & loader.value()) {
+            if (m_mappings.value(hash)->metadata()->loaders & loader.value()) {
                 hashes.append(hash);
             }
         }
     } else {
         hashes = m_mappings.keys();
     }
-    auto job = api.latestVersions(hashes, m_hashType, m_gameVersions, loader, response);
 
-    connect(job.get(), &Task::succeeded, this, [this, response, loader] { checkVersionsResponse(response, loader); });
+    if (hashes.isEmpty()) {
+        checkNextLoader();
+        return;
+    }
+
+    auto job = api.latestVersions(hashes, m_hashType, m_gameVersions, loader, response.get());
+
+    connect(job.get(), &Task::succeeded, this, [this, response, loader] { checkVersionsResponse(response.get(), loader); });
 
     connect(job.get(), &Task::failed, this, &ModrinthCheckUpdate::checkNextLoader);
 
@@ -108,7 +114,7 @@ void ModrinthCheckUpdate::getUpdateModsForLoader(std::optional<ModPlatform::ModL
     job->start();
 }
 
-void ModrinthCheckUpdate::checkVersionsResponse(std::shared_ptr<QByteArray> response, std::optional<ModPlatform::ModLoaderTypes> loader)
+void ModrinthCheckUpdate::checkVersionsResponse(QByteArray* response, std::optional<ModPlatform::ModLoaderTypes> loader)
 {
     setStatus(tr("Parsing the API response from Modrinth..."));
     setProgress(m_progress + 1, m_progressTotal);

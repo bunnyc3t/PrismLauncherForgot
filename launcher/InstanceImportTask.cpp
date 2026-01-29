@@ -150,22 +150,15 @@ void InstanceImportTask::processZipPack()
             extractDir.cd("minecraft");
             m_modpackType = ModpackType::Technic;
             stop = true;
-        } else {
-            QFileInfo fileInfo(fileName);
-            if (fileInfo.fileName() == "instance.cfg") {
-                qDebug() << "MultiMC:" << true;
-                m_modpackType = ModpackType::MultiMC;
-                root = cleanPath(fileInfo.path());
-                stop = true;
-                return true;
-            }
-            if (fileInfo.fileName() == "manifest.json") {
-                qDebug() << "Flame:" << true;
-                m_modpackType = ModpackType::Flame;
-                root = cleanPath(fileInfo.path());
-                stop = true;
-                return true;
-            }
+        } else if (fileName == "manifest.json") {
+            qDebug() << "Flame:" << true;
+            m_modpackType = ModpackType::Flame;
+            stop = true;
+        } else if (QFileInfo fileInfo(fileName); fileInfo.fileName() == "instance.cfg") {
+            qDebug() << "MultiMC:" << true;
+            m_modpackType = ModpackType::MultiMC;
+            root = cleanPath(fileInfo.path());
+            stop = true;
         }
         QCoreApplication::processEvents();
         return true;
@@ -348,9 +341,9 @@ void InstanceImportTask::processTechnic()
 void InstanceImportTask::processMultiMC()
 {
     QString configPath = FS::PathCombine(m_stagingPath, "instance.cfg");
-    auto instanceSettings = std::make_shared<INISettingsObject>(configPath);
+    auto instanceSettings = std::make_unique<INISettingsObject>(configPath);
 
-    NullInstance instance(m_globalSettings, instanceSettings, m_stagingPath);
+    NullInstance instance(m_globalSettings, std::move(instanceSettings), m_stagingPath);
 
     // reset time played on import... because packs.
     instance.resetTimePlayed();
