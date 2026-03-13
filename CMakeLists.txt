@@ -31,20 +31,16 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_C_STANDARD 11)
 include(GenerateExportHeader)
 
-add_compile_definitions($<$<CONFIG:Release>:QT_NO_DEBUG>)
+add_compile_definitions($<$<NOT:$<CONFIG:Debug>>:QT_NO_DEBUG>)
 
 if(MSVC)
     # /GS Adds buffer security checks, default on but incuded anyway to mirror gcc's fstack-protector flag
-    # /permissive- specify standards-conforming compiler behavior, also enabled by Qt6, default on with std:c++20
-    # Use /W4 as /Wall includes unnesserey warnings such as added padding to structs
-    set(CMAKE_CXX_FLAGS "/GS /permissive- /W4 ${CMAKE_CXX_FLAGS}")
-
     # /EHs Enables stack unwind semantics for standard C++ exceptions to ensure stackframes are unwound
     # and object deconstructors are called when an exception is caught.
     # without it memory leaks and a warning is printed
     # /EHc tells the compiler to assume that functions declared as extern "C" never throw a C++ exception
     # This appears to not always be a defualt compiler option in CMAKE
-    set(CMAKE_CXX_FLAGS "/EHsc ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "/GS /EHsc ${CMAKE_CXX_FLAGS}")
 
     # LINK accepts /SUBSYSTEM whics sets if we are a WINDOWS (gui) or a CONSOLE programs
     # This implicitly selects an entrypoint specific to the subsystem selected
@@ -79,7 +75,7 @@ if(MSVC)
         set(CMAKE_MAP_IMPORTED_CONFIG_RELWITHDEBINFO Release "")
     endif()
 else()
-    set(CMAKE_CXX_FLAGS "-Wall -pedantic -fstack-protector-strong --param=ssp-buffer-size=4 ${CMAKE_CXX_FLAGS}")
+    set(CMAKE_CXX_FLAGS "-fstack-protector-strong --param=ssp-buffer-size=4 ${CMAKE_CXX_FLAGS}")
 
     # ATL's pack list needs more than the default 1 Mib stack on windows
     if(WIN32)
@@ -172,7 +168,8 @@ endif()
 ######## Set URLs ########
 set(Launcher_NEWS_RSS_URL "https://prismlauncher.org/feed/feed.xml" CACHE STRING "URL to fetch Prism Launcher's news RSS feed from.")
 set(Launcher_NEWS_OPEN_URL "https://prismlauncher.org/news" CACHE STRING "URL that gets opened when the user clicks 'More News'")
-set(Launcher_HELP_URL "https://prismlauncher.org/wiki/help-pages/%1" CACHE STRING "URL (with arg %1 to be substituted with page-id) that gets opened when the user requests help")
+set(Launcher_WIKI_URL "https://prismlauncher.org/wiki/" CACHE STRING "URL that gets opened when the user clicks 'Launcher Help'")
+set(Launcher_HELP_URL "https://prismlauncher.org/wiki/help-pages/%1" CACHE STRING "URL (with arg %1 to be substituted with page-id) that gets opened when the user requests help in a dialog window")
 set(Launcher_LOGIN_CALLBACK_URL "https://prismlauncher.org/successful-login" CACHE STRING "URL that gets opened when the user successfully logins.")
 set(Launcher_LEGACY_FMLLIBS_BASE_URL "https://files.prismlauncher.org/fmllibs/" CACHE STRING "URL for legacy (<=1.5.2) FML Libraries.")
 
@@ -413,7 +410,7 @@ if(UNIX AND APPLE)
                 COMMAND ${ACTOOL_EXE} "${ICON_SOURCE}"
                         --compile "${ASSETS_OUT_DIR}"
                         --output-partial-info-plist /dev/null
-                        --app-icon PrismLauncher
+                        --app-icon ${Launcher_Name}
                         --enable-on-demand-resources NO
                         --target-device mac
                         --minimum-deployment-target ${CMAKE_OSX_DEPLOYMENT_TARGET}
