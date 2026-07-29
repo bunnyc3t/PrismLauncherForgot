@@ -20,11 +20,13 @@
 
 #include <QMouseEvent>
 #include <QOpenGLBuffer>
+#include <QProcessEnvironment>
 #include <QVector2D>
 #include <QVector3D>
 #include <QtMath>
 #include <functional>
 
+#include "BuildConfig.h"
 #include "minecraft/skins/SkinModel.h"
 #include "rainbow.h"
 #include "ui/dialogs/skins/draw/BoxGeometry.h"
@@ -330,6 +332,12 @@ void SkinOpenGLWindow::setElytraVisible(bool visible)
 
 bool SkinOpenGLWindow::hasOpenGL()
 {
+    if (!QProcessEnvironment::systemEnvironment()
+             .value(QStringLiteral("%1_DISABLE_GLVULKAN").arg(BuildConfig.LAUNCHER_ENVNAME))
+             .isEmpty()) {
+        return false;
+    }
+
     QOpenGLContext ctx;
     return ctx.create();
 }

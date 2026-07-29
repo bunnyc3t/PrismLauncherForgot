@@ -54,6 +54,7 @@ class Config {
     QString LAUNCHER_GIT;
     QString LAUNCHER_APPID;
     QString LAUNCHER_SVGFILENAME;
+    QString LAUNCHER_ENVNAME;
 
     /// The major version number.
     int VERSION_MAJOR;
@@ -193,8 +194,10 @@ class Config {
     QString MODRINTH_STAGING_URL = "https://staging-api.modrinth.com/v2";
     QString MODRINTH_PROD_URL = "https://api.modrinth.com/v2";
     QStringList MODRINTH_MRPACK_HOSTS{ "cdn.modrinth.com", "github.com", "raw.githubusercontent.com", "gitlab.com" };
+    QString MODRINTH_DOWNLOAD_HOST = "cdn.modrinth.com";
 
     QString FLAME_BASE_URL = "https://api.curseforge.com/v1";
+    QString FLAME_DOWNLOAD_HOST = "edge.forgecdn.net";
 
     QString versionString() const;
     /**

@@ -568,7 +568,7 @@ bool process(Mod& mod, ProcessingLevel level)
         case ResourceType::LITEMOD:
             return processLitemod(mod);
         default:
-            qWarning() << "Invalid type for mod parse task!";
+            qWarning() << "Invalid type" << mod.type() << "for mod parse task!";
             return false;
     }
 }
@@ -751,7 +751,7 @@ bool loadIconFile(const Mod& mod, QPixmap* pixmap)
             if (icon_info.exists() && icon_info.isFile()) {
                 QFile icon(icon_info.filePath());
                 if (!icon.open(QIODevice::ReadOnly)) {
-                    return png_invalid("failed  to open file " + icon_info.filePath());
+                    return png_invalid("failed to open file " + icon_info.filePath() + " " + icon.errorString());
                 }
                 auto data = icon.readAll();
 

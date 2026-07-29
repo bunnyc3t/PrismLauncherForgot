@@ -29,8 +29,6 @@ class QDir;
 
 namespace Packwiz {
 
-auto getRealIndexName(const QDir& index_dir, QString normalized_index_name, bool should_match = false) -> QString;
-
 class V1 {
    public:
     // can also represent other resources beside loader mods - but this is what packwiz calls it
@@ -38,7 +36,7 @@ class V1 {
         QString slug{};
         QString name{};
         QString filename{};
-        ModPlatform::Side side{ ModPlatform::Side::UniversalSide };
+        ModPlatform::SideType side{ ModPlatform::SideType::UniversalSide };
         ModPlatform::ModLoaderTypes loaders;
         QStringList mcVersions;
         ModPlatform::IndexedVersionType releaseType;

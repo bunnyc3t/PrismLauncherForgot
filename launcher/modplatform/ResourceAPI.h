@@ -71,7 +71,7 @@ class ResourceAPI {
     template <typename T>
     struct Callback {
         std::function<void(T&)> on_succeed;
-        std::function<void(QString const& reason, int network_error_code)> on_fail;
+        std::function<void(const QString& reason, int network_error_code)> on_fail;
         std::function<void()> on_abort;
     };
 
@@ -83,9 +83,9 @@ class ResourceAPI {
         std::optional<SortingMethod> sorting;
         std::optional<ModPlatform::ModLoaderTypes> loaders;
         std::optional<std::vector<Version>> versions;
-        std::optional<ModPlatform::Side> side;
+        std::optional<ModPlatform::SideType> side;
         std::optional<QStringList> categoryIds;
-        bool openSource;
+        bool openSource{};
     };
 
     struct VersionSearchArgs {
@@ -94,6 +94,7 @@ class ResourceAPI {
         std::optional<std::vector<Version>> mcVersions;
         std::optional<ModPlatform::ModLoaderTypes> loaders;
         ModPlatform::ResourceType resourceType;
+        bool includeChangelog{};
     };
 
     struct ProjectInfoArgs {
@@ -104,6 +105,7 @@ class ResourceAPI {
         ModPlatform::Dependency dependency;
         Version mcVersion;
         ModPlatform::ModLoaderTypes loader;
+        bool includeChangelog{};
     };
 
    public:
@@ -113,10 +115,10 @@ class ResourceAPI {
    public slots:
     virtual Task::Ptr searchProjects(SearchArgs&&, Callback<QList<ModPlatform::IndexedPack::Ptr>>&&) const;
 
-    virtual std::pair<Task::Ptr, QByteArray*> getProject(QString addonId) const;
+    virtual std::pair<Task::Ptr, QByteArray*> getProject(QString addonId, bool askRetry = true) const;
     virtual std::pair<Task::Ptr, QByteArray*> getProjects(QStringList addonIds) const = 0;
 
-    virtual Task::Ptr getProjectInfo(ProjectInfoArgs&&, Callback<ModPlatform::IndexedPack::Ptr>&&) const;
+    virtual Task::Ptr getProjectInfo(ProjectInfoArgs&&, Callback<ModPlatform::IndexedPack::Ptr>&&, bool askRetry = true) const;
     Task::Ptr getProjectVersions(VersionSearchArgs&& args, Callback<QVector<ModPlatform::IndexedVersion>>&& callbacks) const;
     virtual Task::Ptr getDependencyVersion(DependencySearchArgs&&, Callback<ModPlatform::IndexedVersion>&&) const;
 
@@ -128,10 +130,10 @@ class ResourceAPI {
     QString getGameVersionsString(std::vector<Version> mcVersions) const;
 
    public:
-    virtual auto getSearchURL(SearchArgs const& args) const -> std::optional<QString> = 0;
-    virtual auto getInfoURL(QString const& id) const -> std::optional<QString> = 0;
-    virtual auto getVersionsURL(VersionSearchArgs const& args) const -> std::optional<QString> = 0;
-    virtual auto getDependencyURL(DependencySearchArgs const& args) const -> std::optional<QString> = 0;
+    virtual auto getSearchURL(const SearchArgs& args) const -> std::optional<QString> = 0;
+    virtual auto getInfoURL(const QString& id) const -> std::optional<QString> = 0;
+    virtual auto getVersionsURL(const VersionSearchArgs& args) const -> std::optional<QString> = 0;
+    virtual auto getDependencyURL(const DependencySearchArgs& args) const -> std::optional<QString> = 0;
 
     /** Functions to load data into a pack.
      *

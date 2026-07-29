@@ -94,8 +94,8 @@ void LauncherPartLaunch::executeTask()
 
     m_launchScript = instance->createLaunchScript(m_session, m_targetToJoin);
     QStringList args = instance->javaArguments();
-    QString allArgs = args.join(", ");
-    emit logLine("Java Arguments:\n[" + m_parent->censorPrivateInfo(allArgs) + "]\n\n", MessageLevel::Launcher);
+    QString allArgs = args.join(" ");
+    emit logLine("Java arguments:\n  " + m_parent->censorPrivateInfo(allArgs) + "\n", MessageLevel::Launcher);
 
     auto javaPath = FS::ResolveExecutable(instance->settings()->get("JavaPath").toString());
 
@@ -164,9 +164,9 @@ void LauncherPartLaunch::on_state(LoggedProcess::State state)
     switch (state) {
         case LoggedProcess::FailedToStart: {
             //: Error message displayed if instace can't start
-            const char* reason = QT_TR_NOOP("Could not launch Minecraft!");
-            emit logLine(reason, MessageLevel::Fatal);
-            emitFailed(tr(reason));
+            const char* reason = QT_TR_NOOP("Could not launch Minecraft: %1");
+            emit logLine(QString(reason).arg(m_process.errorString()), MessageLevel::Fatal);
+            emitFailed(tr(reason).arg(m_process.errorString()));
             return;
         }
         case LoggedProcess::Aborted:

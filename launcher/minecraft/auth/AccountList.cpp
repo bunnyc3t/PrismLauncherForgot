@@ -450,7 +450,7 @@ bool AccountList::loadList()
     // Try to open the file and fail if we can't.
     // TODO: We should probably report this error to the user.
     if (!file.open(QIODevice::ReadOnly)) {
-        qCritical() << QString("Failed to read the account list file (%1).").arg(m_listFilePath).toUtf8();
+        qCritical() << QString("Failed to read the account list file %1 (%2).").arg(m_listFilePath).arg(file.errorString()).toUtf8();
         return false;
     }
 
@@ -567,7 +567,7 @@ bool AccountList::saveList()
     // Try to open the file and fail if we can't.
     // TODO: We should probably report this error to the user.
     if (!file.open(QIODevice::WriteOnly)) {
-        qCritical() << QString("Failed to read the account list file (%1).").arg(m_listFilePath).toUtf8();
+        qCritical() << QString("Failed to save the account list file %1 (%2).").arg(m_listFilePath).arg(file.errorString()).toUtf8();
         return false;
     }
 
@@ -578,7 +578,7 @@ bool AccountList::saveList()
         qDebug() << "Saved account list to" << m_listFilePath;
         return true;
     } else {
-        qDebug() << "Failed to save accounts to" << m_listFilePath;
+        qDebug() << "Failed to save accounts to" << m_listFilePath << "error:" << file.errorString();
         return false;
     }
 }
@@ -648,9 +648,17 @@ void AccountList::tryNext()
     while (m_refreshQueue.length()) {
         auto accountId = m_refreshQueue.front();
         m_refreshQueue.pop_front();
+        bool found = false;
         for (int i = 0; i < count(); i++) {
             auto account = at(i);
             if (account->internalId() == accountId) {
+                found = true;
+                if (!account->shouldRefresh()) {
+                    // Account no longer needs refreshing, skip it.
+                    qDebug() << "RefreshSchedule: Skipping account" << account->profileName() << "with internal ID"
+                             << accountId << "(no longer needs refresh)";
+                    break;
+                }
                 m_currentTask = account->refresh();
                 if (m_currentTask) {
                     connect(m_currentTask.get(), &Task::succeeded, this, &AccountList::authSucceeded);
@@ -660,9 +668,12 @@ void AccountList::tryNext()
                              << accountId;
                     return;
                 }
+                break;
             }
         }
-        qDebug() << "RefreshSchedule: Account with internal ID" << accountId << "not found.";
+        if (!found) {
+            qDebug() << "RefreshSchedule: Account with internal ID" << accountId << "not found.";
+        }
     }
     // if we get here, no account needed refreshing. Schedule refresh in an hour.
     m_refreshTimer->start(1000 * 3600);

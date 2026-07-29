@@ -34,37 +34,32 @@
  *      limitations under the License.
  */
 
+#include "InstanceList.h"
+
 #include <QDebug>
-#include <QDir>
 #include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
-#include <QFileSystemWatcher>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QMimeData>
-#include <QPair>
 #include <QSet>
 #include <QStack>
-#include <QTextStream>
-#include <QThread>
 #include <QTimer>
 #include <QUuid>
-#include <QXmlStreamReader>
 
 #include "BaseInstance.h"
 #include "ExponentialSeries.h"
 #include "FileSystem.h"
-#include "InstanceList.h"
+
 #include "InstanceTask.h"
 #include "NullInstance.h"
 #include "WatchLock.h"
 #include "minecraft/MinecraftInstance.h"
-#include "minecraft/ShortcutUtils.h"
 #include "settings/INISettingsObject.h"
 
 #ifdef Q_OS_WIN32
-#include <Windows.h>
+#include <windows.h>
 #endif
 
 const static int GROUP_FILE_FORMAT_VERSION = 1;
@@ -566,7 +561,9 @@ void InstanceList::updateTotalPlayTime()
 {
     totalPlayTime = 0;
     for (const auto& itr : m_instances) {
-        totalPlayTime += itr->totalTimePlayed();
+        if (itr->countTimePlayed()) {
+            totalPlayTime += itr->totalTimePlayed();
+        }
     }
 }
 
@@ -617,7 +614,7 @@ BaseInstance* InstanceList::getInstanceById(QString instId) const
     if (instId.isEmpty())
         return nullptr;
     for (auto& inst : m_instances) {
-        if (inst->id() == instId) {
+        if (inst->id() == instId || inst->uuid() == instId) {
             return inst.get();
         }
     }
@@ -929,23 +926,23 @@ class InstanceStaging : public Task {
         connect(child, &Task::progress, this, &InstanceStaging::setProgress);
         connect(child, &Task::stepProgress, this, &InstanceStaging::propagateStepProgress);
         connect(&m_backoffTimer, &QTimer::timeout, this, &InstanceStaging::childSucceeded);
-        m_backoffTimer.setSingleShot(true);
     }
 
-    virtual ~InstanceStaging() {}
+    ~InstanceStaging() override = default;
 
     // FIXME/TODO: add ability to abort during instance commit retries
     bool abort() override
     {
-        if (!canAbort())
+        if (!canAbort()) {
             return false;
+        }
 
         return m_child->abort();
     }
     bool canAbort() const override { return (m_child && m_child->canAbort()); }
 
    protected:
-    virtual void executeTask() override
+    void executeTask() override
     {
         if (m_stagingPath.isNull()) {
             emitFailed(tr("Could not create staging folder"));
@@ -959,10 +956,8 @@ class InstanceStaging : public Task {
    private slots:
     void childSucceeded()
     {
-        if (!isRunning())
-            return;
         unsigned sleepTime = backoff();
-        if (m_parent->commitStagedInstance(m_stagingPath, *m_child.get(), m_child->group(), *m_child.get())) {
+        if (m_parent->commitStagedInstance(m_stagingPath, *m_child, m_child->group(), *m_child)) {
             m_backoffTimer.stop();
             emitSucceeded();
             return;
